@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shopping.Services.Coupon.DataContext;
+using Shopping.Services.CouponApi.Repository.Implementation;
+using Shopping.Services.CouponApi.Repository.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+// Register the ICouponService with its implementation CouponService
+builder.Services.AddScoped<ICouponService, CouponService>();
 
 app.MapControllers();
 

@@ -2,54 +2,53 @@
 using Microsoft.EntityFrameworkCore;
 using Shopping.Services.Coupon.DataContext;
 using Shopping.Services.CouponApi.Models.Dto;
+using Shopping.Services.CouponApi.Repository.Interface;
 namespace Shopping.Services.CouponApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class CouponAPIController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private ResponseDto _response;
-        public CouponAPIController(AppDbContext context)
+        private readonly ICouponService _couponService;
+
+        public CouponAPIController(ICouponService couponService)
         {
-            _context = context;
-            _response = new ResponseDto();
+            _couponService = couponService;
         }
         [HttpGet]
-        public async Task<ResponseDto> Get()
+        public async Task<IActionResult> Get()
         {
-            try
+            var result = await _couponService.Get();
+
+            if (result.StatusCode == 200)
             {
-                var result = await _context.Coupons.ToListAsync();
-                _response.Result = result;
-                _response.StatusCode = StatusCodes.Status200OK;
+                return Ok(result);
             }
-            catch (Exception ex)
-            {
-                _response.IsSuccess = false;
-                _response.Message = ex.ToString();
-                _response.StatusCode = StatusCodes.Status500InternalServerError;
-            }
-            return _response;
+
+            return StatusCode(result.StatusCode, result);
         }
 
         // GET api/<ValuesController>/5
         [HttpGet("{id}")]
-        public async Task<ResponseDto> Get(int id)
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(ResponseDto), StatusCodes.Status200OK)] // Successful response
+        [ProducesResponseType(typeof(ResponseDto), StatusCodes.Status400BadRequest)] // Bad request error
+        [ProducesResponseType(typeof(ResponseDto), StatusCodes.Status404NotFound)] // Not found error
+        [ProducesResponseType(typeof(ResponseDto), StatusCodes.Status500InternalServerError)] // Internal server error
+        public async Task<IActionResult> Get(int id)
         {
-            try
+
+            if (id == 0)
+                return BadRequest(new ResponseDto(string.Empty, false, "Value must be greater than 0", StatusCodes.Status400BadRequest));
+
+            var result = await _couponService.Get(id);
+
+            if (result.StatusCode == 200)
             {
-                var result = await _context.Coupons.FirstOrDefaultAsync(x => x.CouponId == id);
-                _response.Result = result;
-                _response.StatusCode = StatusCodes.Status200OK;
+                return Ok(result);
             }
-            catch (Exception ex)
-            {
-                _response.IsSuccess = false;
-                _response.Message = ex.ToString();
-                _response.StatusCode = StatusCodes.Status500InternalServerError;
-            }
-            return _response;
+
+            return StatusCode(result.StatusCode, result);
         }
 
         //// POST api/<ValuesController>
